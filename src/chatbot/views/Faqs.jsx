@@ -50,59 +50,57 @@ export const Faqs = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const senderId = storedUser?.sender_id || "visitante"; // por si no está logueado
+  const rasaUrl = "/rasa"; // Usamos la URL relativa configurada en Vite
 
   const sendMessageToRasa = async (message) => {
-    try {
-      // Evita enviar mensajes vacíos sin imagen
-      if (!message.trim() && !selectedFile && !selectedImage) {
-        console.warn("No hay mensaje ni imagen para enviar.");
-        return;
-      }
-  
-      let response;
-      let data;
-  
-      if (selectedFile || selectedImage) {
-        // Si hay una imagen, se usa FormData
-        const formData = new FormData();
-        formData.append("message", message || ""); // Permite enviar solo imagen sin texto
-  
-        if (selectedFile) {
-          formData.append("image_data", selectedFile);
-        } else if (selectedImage) {
-          const imgResponse = await fetch(selectedImage);
-          const blob = await imgResponse.blob();
-          const file = new File([blob], "image.png", { type: blob.type });
-          formData.append("image_data", file);
-        }
-  
-        response = await fetch("http://localhost:5005/webhooks/custom_rest/webhooks/custom", {
-          method: "POST",
-          body: formData,
-        });
-      } else {
-        // Si solo es texto, se envía como JSON a Rasa
-        response = await fetch("http://localhost:5005/webhooks/rest/webhook", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sender: senderId, message: message }),
-        });
-      }
-  
-      data = await response.json();
-  
-      if (data && data.length > 0) {
-        const botMessage = data.map((item) => item.text).join("\n"); // Toma la respuesta del bot
-  
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { text: botMessage, isUser: false, ImageUrl: "/images/19.jpg" }, // Imagen fija
-        ]);
-      }
-    } catch (error) {
-      console.error("Error al enviar mensaje o imagen:", error);
+  try {
+    if (!message.trim() && !selectedFile && !selectedImage) {
+      console.warn("No hay mensaje ni imagen para enviar.");
+      return;
     }
-  };
+
+    let response;
+    let data;
+
+    if (selectedFile || selectedImage) {
+      const formData = new FormData();
+      formData.append("message", message || "");
+
+      if (selectedFile) {
+        formData.append("image_data", selectedFile);
+      } else if (selectedImage) {
+        const imgResponse = await fetch(selectedImage);
+        const blob = await imgResponse.blob();
+        const file = new File([blob], "image.png", { type: blob.type });
+        formData.append("image_data", file);
+      }
+
+      response = await fetch(`${rasaUrl}/webhooks/custom_rest/webhooks/custom`, {
+        method: "POST",
+        body: formData,
+      });
+    } else {
+      response = await fetch(`${rasaUrl}/webhooks/rest/webhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sender: senderId, message: message }),
+      });
+    }
+
+    data = await response.json();
+
+    if (data && data.length > 0) {
+      const botMessage = data.map((item) => item.text).join("\n");
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { text: botMessage, isUser: false, ImageUrl: "/images/19.jpg" },
+      ]);
+    }
+  } catch (error) {
+    console.error("Error al enviar mensaje o imagen:", error);
+  }
+};
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];

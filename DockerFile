@@ -1,17 +1,20 @@
-# Usa la imagen de Node.js oficial como base
-FROM node:16
+# Usar una imagen base de Node.js
+FROM node:20.14.0
 
-# Establece el directorio de trabajo
+# Establecer el directorio de trabajo
 WORKDIR /app
 
-# Copia los archivos de tu proyecto React al contenedor
-COPY . /app
+# Copiar solo los archivos necesarios primero (package.json y package-lock.json)
+COPY package*.json .
 
-# Instala las dependencias de React
+
+# Instalar las dependencias correctamente
 RUN npm install
 
-# Expón el puerto en el que React corre
-EXPOSE 3000
+# Copiar el resto de los archivos
+COPY . .
 
-# Comando para correr React en modo de desarrollo
+EXPOSE 5173
+
+# Asegurarse de que el contenedor use el comando correcto para iniciar el servidor
 CMD ["npm", "run", "dev"]
